@@ -13,7 +13,6 @@ services:
     volumes:
       - ./frontend/dist:/var/www/html
       - ./certbot/conf:/etc/letsencrypt
-      - certbot_acme_challenge:/var/www/certbot
       - ./docker/nginx:/etc/nginx/conf.d
     networks:
       - laravel
