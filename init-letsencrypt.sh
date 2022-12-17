@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(effect.report www.effect.report)
+domains=(effect.report)
 rsa_key_size=4096
 data_path="./certbot"
 email="effect.bitrix@gmail.com" # Adding a valid address is strongly recommended
