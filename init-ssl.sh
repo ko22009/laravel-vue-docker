@@ -1,7 +1,7 @@
 #!/bin/bash
 
 domains=(localhost)
-data_path="./certbot"
+data_path="./docker/certbot"
 
 echo "### Creating dummy certificate for $domains ..."
 path="/etc/letsencrypt/live/$domains"
