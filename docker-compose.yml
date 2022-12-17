@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME}-nginx
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./frontend/dist:/var/www/html
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - backend
+      - certbot
+      - mysql
+      - redis
+    networks:
+      - laravel
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - laravel
+
+  frontend:
+    build: ./docker/frontend
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./frontend:/var/www/html
+    networks:
+      - laravel
+
+  backend:
+    image: nginx:alpine
+    restart: unless-stopped
+    container_name: ${APP_NAME}-backend
+    tty: true
+    ports:
+      - 8000:8000
+    depends_on:
+      - php-fpm
+    volumes:
+      - ./backend:/var/www/html
+      - ./docker/backend/nginx:/etc/nginx/conf.d
+    networks:
+      - laravel
+
+  php-fpm:
+    build: ./docker/backend
+    restart: unless-stopped
+    container_name: ${APP_NAME}-php-fpm
+    tty: true
+    ports:
+      - 9000
+    volumes:
+      - ./backend:/var/www/html
+      - ./docker/backend/php.ini:/usr/local/etc/php/conf.d/php.ini
+    networks:
+      - laravel
+
+  mysql:
+    image: mariadb:10.6
+    restart: unless-stopped
+    tty: true
+    container_name: ${APP_NAME}-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - 3306
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+    networks:
+      - laravel
+
+  redis:
+    image: redis:alpine
+    container_name: ${APP_NAME}-redis
+    volumes:
+      - ./docker/redis/data:/data
+    ports:
+      - 6379
+    networks:
+      - laravel
+
+networks:
+  laravel:
