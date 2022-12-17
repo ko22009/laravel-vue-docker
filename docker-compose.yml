@@ -1,9 +1,21 @@
 version: "3.8"
 
 services:
-  nginx:
+  certbot:
+    image: certbot/certbot
+    container_name: ${APP_NAME}-certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+    depends_on:
+      - frontend_nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - laravel
+
+  frontend_nginx:
     image: nginx:alpine
-    container_name: ${APP_NAME}-nginx
+    container_name: ${APP_NAME}-frontend_nginx
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     restart: unless-stopped
     tty: true
@@ -11,20 +23,10 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ./frontend/dist:/var/www/html
+      - ./frontend/dist:/var/www/html/:ro
       - ./docker/nginx:/etc/nginx/conf.d/:ro
       - ./certbot/www:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
-    networks:
-      - laravel
-
-  certbot:
-    image: certbot/certbot
-    container_name: ${APP_NAME}-certbot
-    volumes:
-      - ./certbot/www:/var/www/certbot/:rw
-      - ./certbot/conf/:/etc/letsencrypt/:rw
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - laravel
 
@@ -34,35 +36,35 @@ services:
     restart: unless-stopped
     tty: true
     volumes:
-      - ./frontend:/var/www/html
+      - ./frontend:/var/www/html/:rw
     networks:
       - laravel
 
-  backend:
+  backend_nginx:
     image: nginx:alpine
     restart: unless-stopped
-    container_name: ${APP_NAME}-backend
+    container_name: ${APP_NAME}-backend_nginx
     tty: true
     ports:
       - 8000:8000
     depends_on:
-      - php-fpm
+      - backend
     volumes:
-      - ./backend:/var/www/html
-      - ./docker/backend/nginx:/etc/nginx/conf.d
+      - ./backend:/var/www/html/:ro
+      - ./docker/backend/nginx:/etc/nginx/conf.d/:ro
     networks:
       - laravel
 
-  php-fpm:
+  backend:
     build: ./docker/backend
     restart: unless-stopped
-    container_name: ${APP_NAME}-php-fpm
+    container_name: ${APP_NAME}-backend
     tty: true
     ports:
       - 9000
     volumes:
-      - ./backend:/var/www/html
-      - ./docker/backend/php.ini:/usr/local/etc/php/conf.d/php.ini
+      - ./backend:/var/www/html/:rw
+      - ./docker/backend/php.ini:/usr/local/etc/php/conf.d/php.ini/:rw
     networks:
       - laravel
 
