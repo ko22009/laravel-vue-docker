@@ -6,7 +6,7 @@ services:
     container_name: ${APP_NAME}-certbot
     volumes:
       - ./docker/certbot/www:/var/www/certbot/:rw
-      - ./docker/certbot/conf/:/etc/letsencrypt/:rw
+      - ./docker/certbot/conf:/etc/letsencrypt/:rw
     depends_on:
       - frontend_nginx
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
     tty: true
     volumes:
-      - ./frontend:/var/www/html/:rw
+      - ./frontend:/var/www/html
     networks:
       - laravel
 
@@ -50,8 +50,8 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./backend:/var/www/html/:ro
-      - ./docker/backend/nginx:/etc/nginx/conf.d/:ro
+      - ./backend:/var/www/html
+      - ./docker/backend/nginx:/etc/nginx/conf.d
     networks:
       - laravel
 
@@ -63,8 +63,8 @@ services:
     ports:
       - 9000
     volumes:
-      - ./backend:/var/www/html/:rw
-      - ./docker/backend/php.ini:/usr/local/etc/php/conf.d/php.ini/:rw
+      - ./backend:/var/www/html
+      - ./docker/backend/php.ini:/usr/local/etc/php/conf.d/php.ini
     networks:
       - laravel
 
