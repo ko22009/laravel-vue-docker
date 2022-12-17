@@ -30,7 +30,7 @@ services:
 
   frontend:
     build: ./docker/frontend
-    container_name: ${APP_NAME}-fronted
+    container_name: ${APP_NAME}-frontend
     restart: unless-stopped
     tty: true
     volumes:
